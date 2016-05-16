@@ -1,6 +1,11 @@
+#include <iostream>
+#include <fstream>
+
 #include "../include/PPMImage.h"
 
-PPMImage::PPMImage(const char *filename) {
+using namespace std;
+
+PPMImage::PPMImage(char *filename) {
     char buff[16];
     FILE *fp;
     int c, rgb_comp_color;
@@ -52,4 +57,58 @@ PPMImage::PPMImage(const char *filename) {
     }
 
     fclose(fp);
+}
+
+PPMImage::PPMImage(int width, int height, PPMPixel *image) {
+    this->width = width;
+    this->height = height;
+    this->image = (PPMPixel *) malloc(this->width * this->height * sizeof(PPMPixel));
+    for (int i = 0; i < this->width; i++) {
+        for (int j = 0; j < this->height; j++) {
+            this->image[this->width * i + j].red = image[this->width * i + j].red;
+            this->image[this->width * i + j].green = image[this->width * i + j].green;
+            this->image[this->width * i + j].blue = image[this->width * i + j].blue;
+        }
+    }
+}
+
+PPMImage PPMImage::toGrayImage() {
+    unsigned char value;
+    PPMPixel pixel;
+    PPMPixel *gray_image;
+    gray_image = (PPMPixel *) malloc(this->width * this->height * sizeof(PPMPixel));
+    for (int i = 0; i < this->width; i++) {
+        for (int j = 0; j < this->height; j++) {
+            pixel = this->image[this->width * i + j];
+            value = getGrayValue(pixel.red, pixel.green, pixel.blue);
+            gray_image[this->width * i + j].red = value;
+            gray_image[this->width * i + j].green = value;
+            gray_image[this->width * i + j].blue = value;
+        }
+    }
+    return PPMImage(this->width, this->height, gray_image);
+}
+
+unsigned char PPMImage::getGrayValue(unsigned char red, unsigned char green, unsigned char blue) {
+    return (unsigned char) (0.2989 * red + 0.5870 * green + 0.1140 * blue);
+}
+
+void PPMImage::saveImage(char *filename) {
+    PPMPixel pixel;
+    ofstream myfile(filename);
+    if (myfile.is_open()) {
+        myfile << "P6\n";
+        myfile << "512 512\n";
+        myfile << "255\n";
+        for (int i = 0; i < this->width; i++) {
+            for (int j = 0; j < this->height; j++) {
+                pixel = this->image[this->width * i + j];
+                myfile << pixel.red;
+                myfile << pixel.green;
+                myfile << pixel.blue;
+            }
+        }
+        myfile.close();
+    }
+    else cout << "Unable to open file";
 }
