@@ -3,5 +3,5 @@ project(diplomski_hog)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-set(SOURCE_FILES src/main.cpp include/HistogramOfOrientedGradients.h src/HistogramOfOrientedGradients.cpp include/PPMImage.h src/PPMImage.cpp)
+set(SOURCE_FILES src/main.cpp include/HistogramOfOrientedGradients.h src/HistogramOfOrientedGradients.cpp include/PPMImage.h src/PPMImage.cpp include/Operations.h src/Operations.cpp)
 add_executable(diplomski_hog ${SOURCE_FILES})
