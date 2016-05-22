@@ -1,7 +1,6 @@
 #include <iostream>
 
 #include "../include/HistogramOfOrientedGradients.h"
-#include "../include/PPMImage.h"
 
 using namespace std;
 

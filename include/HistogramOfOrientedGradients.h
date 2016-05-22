@@ -16,10 +16,16 @@ public:
 
     HistogramOfOrientedGradients(PPMImage *image);
 
-    void getDescriptor();
+    double *getDescriptor();
 
 private:
-    void getHistogram();
+    double *getHistogram(double *cell_magnitudes, double *cell_angles);
+
+    int *getPixelIndices(int *vector, int length, int index, int *new_length);
+
+    double *getValuesFromIndices(double *vector, int length, int *indices, int ind_length);
+
+    bool arrayContainsIndex(int *array, int length, int value);
 };
 
 #endif //DIPLOMSKI_HOG_HISTOGRAMOFORIENTEDGRADIENTS_H

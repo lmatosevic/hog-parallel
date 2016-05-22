@@ -16,6 +16,10 @@ public:
 
     static double norm(double *vector, int length);
 
+    static double *divideByScalar(double *vector, int length, double scalar);
+
+    static double sumOfProducts(double *vector_first, double *vector_second, int length);
+
     static double *subMatrix(double *matrix, int width, int height, int row_start, int row_end, int col_start,
                              int col_end);
 };

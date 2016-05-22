@@ -1,7 +1,6 @@
 #include <iostream>
 #include <math.h>
 #include "../include/Operations.h"
-#include "../include/PPMImage.h"
 
 using namespace std;
 
@@ -106,5 +105,21 @@ double Operations::norm(double *vector, int length) {
         result += pow(vector[i], 2);
     }
     result = sqrt(result);
+    return result;
+}
+
+double Operations::sumOfProducts(double *vector_first, double *vector_second, int length) {
+    double sum = 0;
+    for (int i = 0; i < length; i++) {
+        sum += vector_first[i] * vector_second[i];
+    }
+    return sum;
+}
+
+double *Operations::divideByScalar(double *vector, int length, double scalar) {
+    double *result = (double *) malloc(length * sizeof(double));
+    for (int i = 0; i < length; i++) {
+        result[i] = vector[i] / scalar;
+    }
     return result;
 }
