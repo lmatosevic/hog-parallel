@@ -63,8 +63,8 @@ PPMImage::PPMImage(int width, int height, PPMPixel *image) {
     this->width = width;
     this->height = height;
     this->image = (PPMPixel *) malloc(this->width * this->height * sizeof(PPMPixel));
-    for (int i = 0; i < this->width; i++) {
-        for (int j = 0; j < this->height; j++) {
+    for (int i = 0; i < this->height; i++) {
+        for (int j = 0; j < this->width; j++) {
             this->image[this->width * i + j].red = image[this->width * i + j].red;
             this->image[this->width * i + j].green = image[this->width * i + j].green;
             this->image[this->width * i + j].blue = image[this->width * i + j].blue;
@@ -77,8 +77,8 @@ PPMImage PPMImage::toGrayImage() {
     PPMPixel pixel;
     PPMPixel *gray_image;
     gray_image = (PPMPixel *) malloc(this->width * this->height * sizeof(PPMPixel));
-    for (int i = 0; i < this->width; i++) {
-        for (int j = 0; j < this->height; j++) {
+    for (int i = 0; i < this->height; i++) {
+        for (int j = 0; j < this->width; j++) {
             pixel = this->image[this->width * i + j];
             value = getGrayValue(pixel.red, pixel.green, pixel.blue);
             gray_image[this->width * i + j].red = value;
@@ -100,8 +100,8 @@ void PPMImage::saveImage(char *filename) {
         myfile << "P6\n";
         myfile << "512 512\n";
         myfile << "255\n";
-        for (int i = 0; i < this->width; i++) {
-            for (int j = 0; j < this->height; j++) {
+        for (int i = 0; i < this->height; i++) {
+            for (int j = 0; j < this->width; j++) {
                 pixel = this->image[this->width * i + j];
                 myfile << pixel.red;
                 myfile << pixel.green;
