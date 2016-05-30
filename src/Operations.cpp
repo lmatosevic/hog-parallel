@@ -9,7 +9,6 @@ double *Operations::imfilter(double *image, int width, int height, double *vecto
     int middle, slider, counter;
     double result;
     double *image_copy;
-
     image_copy = (double *) malloc(width * height * sizeof(double));
     middle = length / 2;
     slider = (length - 1) / 2;
@@ -44,7 +43,7 @@ double *Operations::imfilter(double *image, int width, int height, double *vecto
                     result += vector_filter[middle + counter] * image[height * k + i];
                     counter++;
                 }
-                image_copy[height * j + i] = result;
+                image_copy[width * j + i] = result;
             }
         }
     }
@@ -86,11 +85,11 @@ double *Operations::subMatrix(double *matrix, int width, int height, int row_sta
     double *matrix_copy;
     int k = 0, m = 0;
     int wd = row_end - row_start;
-    int hg = col_start - col_end;
+    int hg = col_end - col_start;
     matrix_copy = (double *) malloc(wd * hg * sizeof(double));
-    for (int i = row_start; i <= row_end; i++) {
+    for (int i = row_start; i < row_end; i++) {
         m = 0;
-        for (int j = col_start; j <= col_end; j++) {
+        for (int j = col_start; j < col_end; j++) {
             matrix_copy[wd * k + m] = matrix[width * i + j];
             m++;
         }

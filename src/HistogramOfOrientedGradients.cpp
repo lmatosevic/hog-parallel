@@ -13,12 +13,12 @@ HistogramOfOrientedGradients::HistogramOfOrientedGradients(PPMImage *image) {
 double *HistogramOfOrientedGradients::getDescriptor() {
     if (this->image->width != IMG_WIDTH || this->image->height != IMG_HEIGHT) {
         cout << "Invalid image size\n";
-        //return;
+        return nullptr;
     }
     int width = this->image->width, height = this->image->height;
     int size = width * height;
     int row_offset, col_offset;
-    double *cell_angles, *cell_magnitudes, *block_hists, *normalized;
+    double *cell_angles = nullptr, *cell_magnitudes = nullptr, *block_hists = nullptr, *normalized = nullptr;
     double magnitude;
     double filter[3] = {-1, 0, 1};
     double *image = Operations::toDouble(this->image->image, width, height);
@@ -30,13 +30,13 @@ double *HistogramOfOrientedGradients::getDescriptor() {
     double *descriptor_vector = (double *) malloc(NUM_VERT_CELLS * NUM_HORIZ_CELLS * NUM_BINS * sizeof(double));
 
     for (int row = 0; row < NUM_VERT_CELLS - 1; row++) {
-        row_offset = (row * CELL_SIZE) + 1;
+        row_offset = row * CELL_SIZE;
         for (int col = 0; col < NUM_HORIZ_CELLS - 1; col++) {
-            col_offset = (col * CELL_SIZE) + 1;
-            cell_angles = Operations::subMatrix(angles, width, height, row_offset, (row_offset + CELL_SIZE - 1),
-                                                col_offset, (col_offset + CELL_SIZE - 1));
-            cell_magnitudes = Operations::subMatrix(magnit, width, height, row_offset, (row_offset + CELL_SIZE - 1),
-                                                    col_offset, (col_offset + CELL_SIZE - 1));
+            col_offset = col * CELL_SIZE;
+            cell_angles = Operations::subMatrix(angles, width, height, row_offset, (row_offset + CELL_SIZE),
+                                                col_offset, (col_offset + CELL_SIZE));
+            cell_magnitudes = Operations::subMatrix(magnit, width, height, row_offset, (row_offset + CELL_SIZE),
+                                                    col_offset, (col_offset + CELL_SIZE));
             histograms[NUM_HORIZ_CELLS * row + col] = this->getHistogram(cell_magnitudes, cell_angles);
         }
     }
@@ -51,6 +51,10 @@ double *HistogramOfOrientedGradients::getDescriptor() {
             }
         }
     }
+    free(cell_angles);
+    free(cell_magnitudes);
+    free(block_hists);
+    free(normalized);
     return descriptor_vector;
 }
 
@@ -59,8 +63,8 @@ double *HistogramOfOrientedGradients::getHistogram(double *cell_magnitudes, doub
     int result_length;
     double bin_size = M_PI / NUM_BINS;
     double min_angle = 0;
-    int *indices;
-    double *portion_pixels, *magnits;
+    int *indices = nullptr;
+    double *portion_pixels = nullptr, *magnits = nullptr;
     double *histogram = (double *) malloc(NUM_BINS * sizeof(double));
     int *left_bin_indices = (int *) malloc(CELL_SIZE * CELL_SIZE * sizeof(int));
     int *right_bin_indices = (int *) malloc(CELL_SIZE * CELL_SIZE * sizeof(int));
@@ -100,7 +104,14 @@ double *HistogramOfOrientedGradients::getHistogram(double *cell_magnitudes, doub
         magnits = this->getValuesFromIndices(cell_magnitudes, length, indices, result_length);
         histogram[i] += Operations::sumOfProducts(portion_pixels, magnits, result_length);
     }
-
+    free(left_portions);
+    free(right_portions);
+    free(left_bin_center);
+    free(right_bin_indices);
+    free(left_bin_indices);
+    free(indices);
+    free(portion_pixels);
+    free(magnits);
     return histogram;
 };
 
