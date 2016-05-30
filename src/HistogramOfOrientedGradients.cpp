@@ -10,7 +10,7 @@ HistogramOfOrientedGradients::HistogramOfOrientedGradients(PPMImage *image) {
     this->image = image;
 }
 
-double *HistogramOfOrientedGradients::getDescriptor() {
+double *HistogramOfOrientedGradients::getDescriptor(int *result_length) {
     if (this->image->width != IMG_WIDTH || this->image->height != IMG_HEIGHT) {
         cout << "Invalid image size\n";
         return nullptr;
@@ -55,6 +55,7 @@ double *HistogramOfOrientedGradients::getDescriptor() {
     free(cell_magnitudes);
     free(block_hists);
     free(normalized);
+    *result_length = NUM_VERT_CELLS * NUM_HORIZ_CELLS * NUM_BINS;
     return descriptor_vector;
 }
 

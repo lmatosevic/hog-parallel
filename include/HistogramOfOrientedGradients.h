@@ -16,7 +16,7 @@ public:
 
     HistogramOfOrientedGradients(PPMImage *image);
 
-    double *getDescriptor();
+    double *getDescriptor(int *result_length);
 
 private:
     double *getHistogram(double *cell_magnitudes, double *cell_angles);
