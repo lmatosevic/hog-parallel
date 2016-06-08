@@ -8,6 +8,7 @@ int main() {
     double *result_hog = nullptr;
     int result_length;
     cout << "HOG started\n";
+    // For bigger images split them into smaller ones and iterate hog algorithm over them in loop
     PPMImage image((char *) "C:/Users/Luka/ClionProjects/diplomski-hog/resources/woman.ppm");
 
     PPMImage gray_image = image.toGrayImage();
