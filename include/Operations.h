@@ -22,6 +22,10 @@ public:
 
     static double *subMatrix(double *matrix, int width, int height, int row_start, int row_end, int col_start,
                              int col_end);
+
+    static void printVector(double *vector, int length);
+
+    static void printVector(int *vector, int length);
 };
 
 #endif //DIPLOMSKI_HOG_OPERATIONS_H

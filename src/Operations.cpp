@@ -66,7 +66,7 @@ double *Operations::magnitude(double *vector_x, double *vector_y, int length) {
     double *magnit;
     magnit = (double *) malloc(length * sizeof(double));
     for (int i = 0; i < length; i++) {
-        magnit[i] = pow(pow(vector_y[i], 2) * pow(vector_x[i], 2), 5);
+        magnit[i] = pow(pow(vector_y[i], 2) * pow(vector_x[i], 2), 0.5);
     }
     return magnit;
 }
@@ -121,4 +121,16 @@ double *Operations::divideByScalar(double *vector, int length, double scalar) {
         result[i] = vector[i] / scalar;
     }
     return result;
+}
+
+void Operations::printVector(double *vector, int length) {
+    for (int i = 0; i < length; i++) {
+        cout << "Element " << i << ": " << vector[i] << "\n";
+    }
+}
+
+void Operations::printVector(int *vector, int length) {
+    for (int i = 0; i < length; i++) {
+        cout << "Element " << i << ": " << vector[i] << "\n";
+    }
 }

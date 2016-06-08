@@ -29,9 +29,9 @@ double *HistogramOfOrientedGradients::getDescriptor(int *result_length) {
     double **histograms = (double **) malloc(NUM_VERT_CELLS * NUM_HORIZ_CELLS * sizeof(double *));
     double *descriptor_vector = (double *) malloc(NUM_VERT_CELLS * NUM_HORIZ_CELLS * NUM_BINS * sizeof(double));
 
-    for (int row = 0; row < NUM_VERT_CELLS - 1; row++) {
+    for (int row = 0; row < NUM_VERT_CELLS; row++) {
         row_offset = row * CELL_SIZE;
-        for (int col = 0; col < NUM_HORIZ_CELLS - 1; col++) {
+        for (int col = 0; col < NUM_HORIZ_CELLS; col++) {
             col_offset = col * CELL_SIZE;
             cell_angles = Operations::subMatrix(angles, width, height, row_offset, (row_offset + CELL_SIZE),
                                                 col_offset, (col_offset + CELL_SIZE));
@@ -41,13 +41,13 @@ double *HistogramOfOrientedGradients::getDescriptor(int *result_length) {
         }
     }
 
-    for (int row = 0; row < NUM_VERT_CELLS - 1; row++) {
-        for (int col = 0; col < NUM_HORIZ_CELLS - 1; col++) {
+    for (int row = 0; row < NUM_VERT_CELLS; row++) {
+        for (int col = 0; col < NUM_HORIZ_CELLS; col++) {
             block_hists = histograms[NUM_HORIZ_CELLS * row + col];
             magnitude = Operations::norm(block_hists, NUM_BINS) + 0.01;
             normalized = Operations::divideByScalar(block_hists, NUM_BINS, magnitude);
             for (int i = 0; i < NUM_BINS; i++) {
-                descriptor_vector[NUM_HORIZ_CELLS * row + NUM_BINS * col + i] = normalized[i];
+                descriptor_vector[NUM_HORIZ_CELLS * NUM_BINS * row + NUM_BINS * col + i] = normalized[i];
             }
         }
     }
@@ -77,21 +77,28 @@ double *HistogramOfOrientedGradients::getHistogram(double *cell_magnitudes, doub
         if (cell_angles[i] < 0) {
             cell_angles[i] += M_PI;
         }
-        left_bin_indices[i] = (int) round((cell_angles[i] - min_angle) / bin_size);
+        left_bin_indices[i] = (int) round((cell_angles[i] - min_angle) / bin_size) - 1;
         right_bin_indices[i] = left_bin_indices[i] + 1;
         left_bin_center[i] = (((left_bin_indices[i] - 0.5) * bin_size) - min_angle);
 
-        if (left_bin_indices[i] == 0) {
-            left_bin_indices[i] = NUM_BINS;
+        if (left_bin_indices[i] == -1) {
+            left_bin_indices[i] = NUM_BINS - 1;
         }
-        if (right_bin_indices[i] == (NUM_BINS + 1)) {
-            right_bin_indices[i] = 1;
+        if (right_bin_indices[i] == NUM_BINS) {
+            right_bin_indices[i] = 0;
         }
 
         right_portions[i] = cell_angles[i] - left_bin_center[i];
         left_portions[i] = bin_size - right_portions[i];
         right_portions[i] = right_portions[i] / bin_size;
         left_portions[i] = left_portions[i] / bin_size;
+
+        if(fabs(right_portions[i]) < 1e-6) {
+            right_portions[i] = 0;
+        }
+        if(fabs(left_portions[i]) < 1e-6) {
+            left_portions[i] = 0;
+        }
     }
 
     for (int i = 0; i < NUM_BINS; i++) {
@@ -104,6 +111,10 @@ double *HistogramOfOrientedGradients::getHistogram(double *cell_magnitudes, doub
         portion_pixels = this->getValuesFromIndices(right_portions, length, indices, result_length);
         magnits = this->getValuesFromIndices(cell_magnitudes, length, indices, result_length);
         histogram[i] += Operations::sumOfProducts(portion_pixels, magnits, result_length);
+
+        if(fabs(histogram[i]) < 1e-6) {
+            histogram[i] = 0;
+        }
     }
     free(left_portions);
     free(right_portions);
