@@ -10,7 +10,7 @@ PPMImage::PPMImage(char *filename) {
     FILE *fp;
     int c, rgb_comp_color;
 
-    fp = fopen(filename, "rb");
+    fopen_s(&fp, filename, "rb");
     if (!fp) {
         fprintf(stderr, "Unable to open file '%s'\n", filename);
         exit(1);
@@ -33,12 +33,12 @@ PPMImage::PPMImage(char *filename) {
     }
 
     ungetc(c, fp);
-    if (fscanf(fp, "%d %d", &this->width, &this->height) != 2) {
+    if (fscanf_s(fp, "%d %d", &this->width, &this->height) != 2) {
         fprintf(stderr, "Invalid image size (error loading '%s')\n", filename);
         exit(1);
     }
 
-    if (fscanf(fp, "%d", &rgb_comp_color) != 1) {
+    if (fscanf_s(fp, "%d", &rgb_comp_color) != 1) {
         fprintf(stderr, "Invalid rgb component (error loading '%s')\n", filename);
         exit(1);
     }

@@ -9,7 +9,7 @@ int main() {
     int result_length;
     cout << "HOG started\n";
     // For bigger images split them into smaller ones and iterate hog algorithm over them in loop
-    PPMImage image((char *) "C:/Users/Luka/ClionProjects/diplomski-hog/resources/woman.ppm");
+    PPMImage image((char *) "slike/woman.ppm");
 
     PPMImage gray_image = image.toGrayImage();
     cout << "Generated grayscale image\n";

@@ -4,6 +4,8 @@
 #include "../include/HistogramOfOrientedGradients.h"
 #include "../include/Operations.h"
 
+#define M_PI 3.1415926535897
+
 using namespace std;
 
 HistogramOfOrientedGradients::HistogramOfOrientedGradients(PPMImage *image) {
@@ -62,7 +64,7 @@ double *HistogramOfOrientedGradients::getDescriptor(int *result_length) {
 double *HistogramOfOrientedGradients::getHistogram(double *cell_magnitudes, double *cell_angles) {
     int length = CELL_SIZE * CELL_SIZE;
     int result_length;
-    double bin_size = M_PI / NUM_BINS;
+    double bin_size =  M_PI / NUM_BINS;
     double min_angle = 0;
     int *indices = nullptr;
     double *portion_pixels = nullptr, *magnits = nullptr;
