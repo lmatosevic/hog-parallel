@@ -2,6 +2,7 @@
 #define DIPLOMSKI_HOG_HISTOGRAMOFORIENTEDGRADIENTS_H
 
 #include "PPMImage.h"
+#include "Common.h"
 
 #define IMG_WIDTH 66
 #define IMG_HEIGHT 130
@@ -18,14 +19,16 @@ public:
 
     double *getDescriptor(int *result_length);
 
+    static double *getHistogram(double *cell_magnitudes, double *cell_angles);
+
 private:
-    double *getHistogram(double *cell_magnitudes, double *cell_angles);
+    static task getNextTask(task *tasks, int index_proc);
 
-    int *getPixelIndices(int *vector, int length, int index, int *new_length);
+    static int *getPixelIndices(int *vector, int length, int index, int *new_length);
 
-    double *getValuesFromIndices(double *vector, int length, int *indices, int ind_length);
+    static double *getValuesFromIndices(double *vector, int length, int *indices, int ind_length);
 
-    bool arrayContainsIndex(int *array, int length, int value);
+    static bool arrayContainsIndex(int *array, int length, int value);
 };
 
 #endif //DIPLOMSKI_HOG_HISTOGRAMOFORIENTEDGRADIENTS_H
