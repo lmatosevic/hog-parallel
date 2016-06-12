@@ -57,7 +57,18 @@ double *HistogramOfOrientedGradients::getDescriptor(int *result_length) {
         }
     }
 
-    if (nproc != 1) {
+    if (nproc == 1) {
+        for (int row = 0; row < NUM_VERT_CELLS; row++) {
+            for (int col = 0; col < NUM_HORIZ_CELLS; col++) {
+                block_hists = histograms[NUM_HORIZ_CELLS * row + col];
+                magnitude = Operations::norm(block_hists, NUM_BINS) + 0.01;
+                normalized = Operations::divideByScalar(block_hists, NUM_BINS, magnitude);
+                for (int i = 0; i < NUM_BINS; i++) {
+                    descriptor_vector[NUM_HORIZ_CELLS * NUM_BINS * row + NUM_BINS * col + i] = normalized[i];
+                }
+            }
+        }
+    } else {
         int is_end = 0;
         int nworkers = nproc - 1;
         do {
@@ -104,27 +115,16 @@ double *HistogramOfOrientedGradients::getDescriptor(int *result_length) {
                             cout << "Master has received a result of task[" << i << "] from worker[" <<
                             status.MPI_SOURCE << "]" << endl;
                         tasks[i].status = 2;
-                        double *hist = (double *) malloc(NUM_BINS * sizeof(double));
-                        for (int j = 0; j < NUM_BINS; j++) hist[j] = data[j];
-                        histograms[NUM_HORIZ_CELLS * tasks[i].row + tasks[i].col] = hist;
+                        for (int j = 0; j < NUM_BINS; j++) {
+                            descriptor_vector[NUM_HORIZ_CELLS * NUM_BINS * tasks[i].row +
+                                              NUM_BINS * tasks[i].col + j] = data[j];
+                        }
                         break;
                     }
                 }
             }
         } while (is_end == 0);
         if (debug) cout << "Master has finished work with all workers" << endl;
-    }
-
-    // Can also be parallelized same way as code above or integrated in it
-    for (int row = 0; row < NUM_VERT_CELLS; row++) {
-        for (int col = 0; col < NUM_HORIZ_CELLS; col++) {
-            block_hists = histograms[NUM_HORIZ_CELLS * row + col];
-            magnitude = Operations::norm(block_hists, NUM_BINS) + 0.01;
-            normalized = Operations::divideByScalar(block_hists, NUM_BINS, magnitude);
-            for (int i = 0; i < NUM_BINS; i++) {
-                descriptor_vector[NUM_HORIZ_CELLS * NUM_BINS * row + NUM_BINS * col + i] = normalized[i];
-            }
-        }
     }
     free(cell_angles);
     free(cell_magnitudes);

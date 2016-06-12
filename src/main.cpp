@@ -4,6 +4,7 @@
 #include "../include/Common.h"
 #include "../include/HistogramOfOrientedGradients.h"
 #include "../include/QPCounter.h"
+#include "../include/Operations.h"
 
 using namespace std;
 
@@ -37,8 +38,10 @@ void worker_job() {
             MPI_Recv(data_magnits, CELL_SIZE * CELL_SIZE, MPI_DOUBLE, 0, TAG_NEW_TASK_2, MPI_COMM_WORLD, &status);
             if(debug) cout << "Worker[" << my_rank << "] has received a new task part 2/2(magnitudes)" << endl;
             double *histogram = HistogramOfOrientedGradients::getHistogram(data_magnits, data_angles);
+            double magnitude = Operations::norm(histogram, NUM_BINS) + 0.01;
+            double *normalized = Operations::divideByScalar(histogram, NUM_BINS, magnitude);
             MPI_Send(&msg, 1, MPI_DOUBLE, 0, TAG_TASK_FINISHED, MPI_COMM_WORLD);
-            MPI_Send(histogram, NUM_BINS, MPI_DOUBLE, 0, TAG_RESULT, MPI_COMM_WORLD);
+            MPI_Send(normalized, NUM_BINS, MPI_DOUBLE, 0, TAG_RESULT, MPI_COMM_WORLD);
             if(debug) cout << "Worker[" << my_rank << "] has sent result to master" << endl;
         }
     } while (1);
