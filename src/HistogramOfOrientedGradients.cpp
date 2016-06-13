@@ -14,10 +14,14 @@ HistogramOfOrientedGradients::HistogramOfOrientedGradients(PPMImage *image) {
 }
 
 double *HistogramOfOrientedGradients::getDescriptor(int *result_length) {
-    if (this->image->width != IMG_WIDTH || this->image->height != IMG_HEIGHT) {
-        cout << "Invalid image size\n";
+    if (this->image->width % IMG_WIDTH != 0 || this->image->height % IMG_HEIGHT != 0) {
+        cout << "Invalid image size. Valid size format is h*128 x w*64, where w,h := {1,2,3,...N}";
         return nullptr;
     }
+    int widthMultiplier = this->image->width / IMG_WIDTH;
+    int heightMultiplier = this->image->height / IMG_HEIGHT;
+    int num_horiz_cells = widthMultiplier * NUM_HORIZ_CELLS;
+    int num_vert_cells = heightMultiplier * NUM_VERT_CELLS;
     int width = this->image->width, height = this->image->height;
     int size = width * height;
     int row_offset, col_offset;
@@ -29,42 +33,42 @@ double *HistogramOfOrientedGradients::getDescriptor(int *result_length) {
     double *dy = Operations::imfilter(image, width, height, filter, 3, true);
     double *angles = Operations::angle(dx, dy, size);
     double *magnit = Operations::magnitude(dx, dy, size);
-    double **histograms = (double **) malloc(NUM_VERT_CELLS * NUM_HORIZ_CELLS * sizeof(double *));
-    double *descriptor_vector = (double *) malloc(NUM_VERT_CELLS * NUM_HORIZ_CELLS * NUM_BINS * sizeof(double));
-    task tasks[NUM_VERT_CELLS * NUM_HORIZ_CELLS];
+    double **histograms = (double **) malloc(num_vert_cells * num_horiz_cells * sizeof(double *));
+    double *descriptor_vector = (double *) malloc(num_vert_cells * num_horiz_cells * NUM_BINS * sizeof(double));
+    task *tasks = (task *) malloc(num_vert_cells * num_horiz_cells * sizeof(task));
 
-    for (int row = 0; row < NUM_VERT_CELLS; row++) {
+    for (int row = 0; row < num_vert_cells; row++) {
         row_offset = row * CELL_SIZE;
-        for (int col = 0; col < NUM_HORIZ_CELLS; col++) {
+        for (int col = 0; col < num_horiz_cells; col++) {
             col_offset = col * CELL_SIZE;
             cell_angles = Operations::subMatrix(angles, width, height, row_offset, (row_offset + CELL_SIZE),
                                                 col_offset, (col_offset + CELL_SIZE));
             cell_magnitudes = Operations::subMatrix(magnit, width, height, row_offset, (row_offset + CELL_SIZE),
                                                     col_offset, (col_offset + CELL_SIZE));
             if (nproc == 1) {
-                histograms[NUM_HORIZ_CELLS * row + col] = getHistogram(cell_magnitudes, cell_angles);
+                histograms[num_horiz_cells * row + col] = getHistogram(cell_magnitudes, cell_angles);
             } else {
                 task new_task;
-                new_task.task_id = NUM_HORIZ_CELLS * row + col;
+                new_task.task_id = num_horiz_cells * row + col;
                 new_task.process_id = 0;
                 new_task.status = 0;
                 new_task.row = row;
                 new_task.col = col;
                 new_task.cell_angles = cell_angles;
                 new_task.cell_magnitudes = cell_magnitudes;
-                tasks[NUM_HORIZ_CELLS * row + col] = new_task;
+                tasks[num_horiz_cells * row + col] = new_task;
             }
         }
     }
 
     if (nproc == 1) {
-        for (int row = 0; row < NUM_VERT_CELLS; row++) {
-            for (int col = 0; col < NUM_HORIZ_CELLS; col++) {
-                block_hists = histograms[NUM_HORIZ_CELLS * row + col];
+        for (int row = 0; row < num_vert_cells; row++) {
+            for (int col = 0; col < num_horiz_cells; col++) {
+                block_hists = histograms[num_horiz_cells * row + col];
                 magnitude = Operations::norm(block_hists, NUM_BINS) + 0.01;
                 normalized = Operations::divideByScalar(block_hists, NUM_BINS, magnitude);
                 for (int i = 0; i < NUM_BINS; i++) {
-                    descriptor_vector[NUM_HORIZ_CELLS * NUM_BINS * row + NUM_BINS * col + i] = normalized[i];
+                    descriptor_vector[num_horiz_cells * NUM_BINS * row + NUM_BINS * col + i] = normalized[i];
                 }
             }
         }
@@ -82,7 +86,7 @@ double *HistogramOfOrientedGradients::getDescriptor(int *result_length) {
             if (status.MPI_TAG == TAG_REQUEST_FOR_TASK) {
                 if (debug)
                     cout << "Master has received a new job offer from worker[" << status.MPI_SOURCE << "]" << endl;
-                task newtask = getNextTask(tasks, status.MPI_SOURCE);
+                task newtask = getNextTask(tasks, status.MPI_SOURCE, num_horiz_cells * num_vert_cells);
                 if (newtask.status == -1) {
                     if (debug) cout << "Master is out of tasks for worker[" << status.MPI_SOURCE << "]" << endl;
                     MPI_Send(&msg, 1, MPI_DOUBLE, status.MPI_SOURCE, TAG_END, MPI_COMM_WORLD);
@@ -109,14 +113,14 @@ double *HistogramOfOrientedGradients::getDescriptor(int *result_length) {
 
             if (status.MPI_TAG == TAG_TASK_FINISHED) {
                 MPI_Recv(data, NUM_BINS, MPI_DOUBLE, status.MPI_SOURCE, TAG_RESULT, MPI_COMM_WORLD, &status);
-                for (int i = 0; i < NUM_VERT_CELLS * NUM_HORIZ_CELLS; i++) {
+                for (int i = 0; i < num_vert_cells * num_horiz_cells; i++) {
                     if (tasks[i].process_id == status.MPI_SOURCE && tasks[i].status == 1) {
                         if (debug)
                             cout << "Master has received a result of task[" << i << "] from worker[" <<
                             status.MPI_SOURCE << "]" << endl;
                         tasks[i].status = 2;
                         for (int j = 0; j < NUM_BINS; j++) {
-                            descriptor_vector[NUM_HORIZ_CELLS * NUM_BINS * tasks[i].row +
+                            descriptor_vector[num_horiz_cells * NUM_BINS * tasks[i].row +
                                               NUM_BINS * tasks[i].col + j] = data[j];
                         }
                         break;
@@ -126,11 +130,12 @@ double *HistogramOfOrientedGradients::getDescriptor(int *result_length) {
         } while (is_end == 0);
         if (debug) cout << "Master has finished work with all workers" << endl;
     }
+    free(tasks);
     free(cell_angles);
     free(cell_magnitudes);
     free(block_hists);
     free(normalized);
-    *result_length = NUM_VERT_CELLS * NUM_HORIZ_CELLS * NUM_BINS;
+    *result_length = num_vert_cells * num_horiz_cells * NUM_BINS;
     return descriptor_vector;
 }
 
@@ -236,10 +241,10 @@ bool HistogramOfOrientedGradients::arrayContainsIndex(int *array, int length, in
     return false;
 }
 
-task HistogramOfOrientedGradients::getNextTask(task *tasks, int index_proc) {
+task HistogramOfOrientedGradients::getNextTask(task *tasks, int index_proc, int length) {
     task no;
     no.status = -1;
-    for (int i = 0; i < NUM_VERT_CELLS * NUM_HORIZ_CELLS; i++) {
+    for (int i = 0; i < length; i++) {
         if (tasks[i].status == 0) {
             tasks[i].status = 1;
             tasks[i].process_id = index_proc;

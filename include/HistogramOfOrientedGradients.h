@@ -4,9 +4,9 @@
 #include "PPMImage.h"
 #include "Common.h"
 
-#define IMG_WIDTH 66
-#define IMG_HEIGHT 130
-#define NUM_BINS 9
+#define IMG_WIDTH 64
+#define IMG_HEIGHT 128
+#define NUM_BINS 8
 #define CELL_SIZE 8
 #define NUM_HORIZ_CELLS 8
 #define NUM_VERT_CELLS 16
@@ -22,7 +22,7 @@ public:
     static double *getHistogram(double *cell_magnitudes, double *cell_angles);
 
 private:
-    static task getNextTask(task *tasks, int index_proc);
+    static task getNextTask(task *tasks, int index_proc, int length);
 
     static int *getPixelIndices(int *vector, int length, int index, int *new_length);
 

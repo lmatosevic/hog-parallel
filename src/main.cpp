@@ -19,11 +19,11 @@ void worker_job() {
         double msg = 0;
 
         MPI_Send(&msg, 1, MPI_DOUBLE, 0, TAG_REQUEST_FOR_TASK, MPI_COMM_WORLD);
-        if(debug) cout << "Worker[" << my_rank << "] has sent requrest for new task" << endl;
+        if (debug) cout << "Worker[" << my_rank << "] has sent requrest for new task" << endl;
         MPI_Recv(&test, 1, MPI_DOUBLE, 0, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 
         if (status.MPI_TAG == TAG_END) {
-            if(debug) cout << "Worker[" << my_rank << "] has received END of work" << endl;
+            if (debug) cout << "Worker[" << my_rank << "] has received END of work" << endl;
             break;
         }
 
@@ -31,18 +31,18 @@ void worker_job() {
             double data_angles[CELL_SIZE * CELL_SIZE];
             double data_magnits[CELL_SIZE * CELL_SIZE];
 
-            if(debug) cout << "Worker[" << my_rank << "] has received a new task affirmation" << endl;
+            if (debug) cout << "Worker[" << my_rank << "] has received a new task affirmation" << endl;
 
             MPI_Recv(data_angles, CELL_SIZE * CELL_SIZE, MPI_DOUBLE, 0, TAG_NEW_TASK_1, MPI_COMM_WORLD, &status);
-            if(debug) cout << "Worker[" << my_rank << "] has received a new task part 1/2(angles)" << endl;
+            if (debug) cout << "Worker[" << my_rank << "] has received a new task part 1/2(angles)" << endl;
             MPI_Recv(data_magnits, CELL_SIZE * CELL_SIZE, MPI_DOUBLE, 0, TAG_NEW_TASK_2, MPI_COMM_WORLD, &status);
-            if(debug) cout << "Worker[" << my_rank << "] has received a new task part 2/2(magnitudes)" << endl;
+            if (debug) cout << "Worker[" << my_rank << "] has received a new task part 2/2(magnitudes)" << endl;
             double *histogram = HistogramOfOrientedGradients::getHistogram(data_magnits, data_angles);
             double magnitude = Operations::norm(histogram, NUM_BINS) + 0.01;
             double *normalized = Operations::divideByScalar(histogram, NUM_BINS, magnitude);
             MPI_Send(&msg, 1, MPI_DOUBLE, 0, TAG_TASK_FINISHED, MPI_COMM_WORLD);
             MPI_Send(normalized, NUM_BINS, MPI_DOUBLE, 0, TAG_RESULT, MPI_COMM_WORLD);
-            if(debug) cout << "Worker[" << my_rank << "] has sent result to master" << endl;
+            if (debug) cout << "Worker[" << my_rank << "] has sent result to master" << endl;
         }
     } while (1);
 }
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
-    if(my_rank == 0) {
+    if (my_rank == 0) {
         if (argc <= 1) {
             cout << "Image path not specified." << endl;
             cout << "usage: program image_path [-debug]" << endl;
@@ -71,7 +71,7 @@ int main(int argc, char **argv) {
                 debug = true;
             }
         }
-        if(argc == 2) {
+        if (argc == 2) {
             debug = false;
         }
         if (argc > 3) {
@@ -99,14 +99,15 @@ int main(int argc, char **argv) {
         result_hog = master_job(hog, &result_length);
         if (result_hog) {
             cout << "Descriptor is generated\n";
-            if(debug) {
+            if (debug) {
                 cout << "HOG descriptor vector:\n";
                 for (int i = 0; i < result_length; i++) {
                     cout << "value " << i << ": " << result_hog[i] << endl;
                 }
             }
         } else {
-            cout << "Descriptor is not generated\nExiting\n";
+            cout << "Descriptor is not generated\nExiting...\n";
+            exit(-1);
         }
         free(result_hog);
         cout << "HOG finished\n" << endl;

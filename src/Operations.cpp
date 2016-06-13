@@ -32,15 +32,15 @@ double *Operations::imfilter(double *image, int width, int height, double *vecto
     } else {
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
-                result = vector_filter[middle] * image[height * j + i];
+                result = vector_filter[middle] * image[width * j + i];
                 counter = 1;
                 for (int k = j - 1; k >= 0 && counter <= slider; k--) {
-                    result += vector_filter[middle - counter] * image[height * k + i];
+                    result += vector_filter[middle - counter] * image[width * k + i];
                     counter++;
                 }
                 counter = 1;
                 for (int k = j + 1; k < height && counter <= slider; k++) {
-                    result += vector_filter[middle + counter] * image[height * k + i];
+                    result += vector_filter[middle + counter] * image[width * k + i];
                     counter++;
                 }
                 image_copy[width * j + i] = result;
