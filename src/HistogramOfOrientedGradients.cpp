@@ -1,5 +1,6 @@
 #include <iostream>
 #include <math.h>
+#include <algorithm>
 #include <mpi.h>
 
 #include "../include/HistogramOfOrientedGradients.h"
@@ -18,11 +19,12 @@ double *HistogramOfOrientedGradients::getDescriptor(int *result_length) {
         cout << "Invalid image size. Valid size format is h*128 x w*64, where w,h := {1,2,3,...N}";
         return nullptr;
     }
-    int widthMultiplier = this->image->width / IMG_WIDTH;
-    int heightMultiplier = this->image->height / IMG_HEIGHT;
-    int num_horiz_cells = widthMultiplier * NUM_HORIZ_CELLS;
-    int num_vert_cells = heightMultiplier * NUM_VERT_CELLS;
     int width = this->image->width, height = this->image->height;
+    int widthMultiplier = width / IMG_WIDTH;
+    int heightMultiplier = height / IMG_HEIGHT;
+    cell_size = min(widthMultiplier, heightMultiplier) > 4 ? CELL_SIZE * 2 : CELL_SIZE;
+    int num_horiz_cells = (widthMultiplier * NUM_HORIZ_CELLS) / (cell_size / CELL_SIZE);
+    int num_vert_cells = (heightMultiplier * NUM_VERT_CELLS) / (cell_size / CELL_SIZE);
     int size = width * height;
     int row_offset, col_offset;
     double *cell_angles = nullptr, *cell_magnitudes = nullptr, *block_hists = nullptr, *normalized = nullptr;
@@ -38,13 +40,13 @@ double *HistogramOfOrientedGradients::getDescriptor(int *result_length) {
     task *tasks = (task *) malloc(num_vert_cells * num_horiz_cells * sizeof(task));
 
     for (int row = 0; row < num_vert_cells; row++) {
-        row_offset = row * CELL_SIZE;
+        row_offset = row * cell_size;
         for (int col = 0; col < num_horiz_cells; col++) {
-            col_offset = col * CELL_SIZE;
-            cell_angles = Operations::subMatrix(angles, width, height, row_offset, (row_offset + CELL_SIZE),
-                                                col_offset, (col_offset + CELL_SIZE));
-            cell_magnitudes = Operations::subMatrix(magnit, width, height, row_offset, (row_offset + CELL_SIZE),
-                                                    col_offset, (col_offset + CELL_SIZE));
+            col_offset = col * cell_size;
+            cell_angles = Operations::subMatrix(angles, width, height, row_offset, (row_offset + cell_size),
+                                                col_offset, (col_offset + cell_size));
+            cell_magnitudes = Operations::subMatrix(magnit, width, height, row_offset, (row_offset + cell_size),
+                                                    col_offset, (col_offset + cell_size));
             if (nproc == 1) {
                 histograms[num_horiz_cells * row + col] = getHistogram(cell_magnitudes, cell_angles);
             } else {
@@ -75,6 +77,12 @@ double *HistogramOfOrientedGradients::getDescriptor(int *result_length) {
     } else {
         int is_end = 0;
         int nworkers = nproc - 1;
+        if (debug) cout << "Master has started sending config to workers (cell_size=" << cell_size << ")" << endl;
+        for (int i = 1; i <= nworkers; i++) {
+            MPI_Send(&cell_size, 1, MPI_INTEGER, i, TAG_CONFIGURATION, MPI_COMM_WORLD);
+            if (debug) cout << "Master has sent configuration to worker[" << i << "]" << endl;
+        }
+        if (debug) cout << "Master has started with work" << endl;
         do {
             MPI_Status status;
             double data[NUM_BINS];
@@ -97,7 +105,7 @@ double *HistogramOfOrientedGradients::getDescriptor(int *result_length) {
                         continue;
                     }
                 } else {
-                    int length = CELL_SIZE * CELL_SIZE;
+                    int length = cell_size * cell_size;
                     newtask.process_id = status.MPI_SOURCE;
                     newtask.status = 1;
                     MPI_Send(&msg, 1, MPI_DOUBLE, status.MPI_SOURCE, TAG_NEW_TASK, MPI_COMM_WORLD);
@@ -140,18 +148,18 @@ double *HistogramOfOrientedGradients::getDescriptor(int *result_length) {
 }
 
 double *HistogramOfOrientedGradients::getHistogram(double *cell_magnitudes, double *cell_angles) {
-    int length = CELL_SIZE * CELL_SIZE;
+    int length = cell_size * cell_size;
     int result_length;
     double bin_size = M_PI / NUM_BINS;
     double min_angle = 0;
     int *indices = nullptr;
     double *portion_pixels = nullptr, *magnits = nullptr;
     double *histogram = (double *) malloc(NUM_BINS * sizeof(double));
-    int *left_bin_indices = (int *) malloc(CELL_SIZE * CELL_SIZE * sizeof(int));
-    int *right_bin_indices = (int *) malloc(CELL_SIZE * CELL_SIZE * sizeof(int));
-    double *left_bin_center = (double *) malloc(CELL_SIZE * CELL_SIZE * sizeof(double));
-    double *right_portions = (double *) malloc(CELL_SIZE * CELL_SIZE * sizeof(double));
-    double *left_portions = (double *) malloc(CELL_SIZE * CELL_SIZE * sizeof(double));
+    int *left_bin_indices = (int *) malloc(cell_size * cell_size * sizeof(int));
+    int *right_bin_indices = (int *) malloc(cell_size * cell_size * sizeof(int));
+    double *left_bin_center = (double *) malloc(cell_size * cell_size * sizeof(double));
+    double *right_portions = (double *) malloc(cell_size * cell_size * sizeof(double));
+    double *left_portions = (double *) malloc(cell_size * cell_size * sizeof(double));
 
     for (int i = 0; i < length; i++) {
         if (cell_angles[i] < 0) {

@@ -11,10 +11,13 @@ using namespace std;
 int my_rank;
 int nproc;
 bool debug;
+int cell_size;
 
 void worker_job() {
+    MPI_Status status;
+    MPI_Recv(&cell_size, 1, MPI_INTEGER, 0, TAG_CONFIGURATION, MPI_COMM_WORLD, &status);
+    if (debug) cout << "Worker[" << my_rank << "] has recieved configuration data" << endl;
     do {
-        MPI_Status status;
         double test;
         double msg = 0;
 
@@ -28,14 +31,14 @@ void worker_job() {
         }
 
         if (status.MPI_TAG == TAG_NEW_TASK) {
-            double data_angles[CELL_SIZE * CELL_SIZE];
-            double data_magnits[CELL_SIZE * CELL_SIZE];
+            double *data_angles = (double *) malloc(cell_size * cell_size * sizeof(double));
+            double *data_magnits = (double *) malloc(cell_size * cell_size * sizeof(double));
 
             if (debug) cout << "Worker[" << my_rank << "] has received a new task affirmation" << endl;
 
-            MPI_Recv(data_angles, CELL_SIZE * CELL_SIZE, MPI_DOUBLE, 0, TAG_NEW_TASK_1, MPI_COMM_WORLD, &status);
+            MPI_Recv(data_angles, cell_size * cell_size, MPI_DOUBLE, 0, TAG_NEW_TASK_1, MPI_COMM_WORLD, &status);
             if (debug) cout << "Worker[" << my_rank << "] has received a new task part 1/2(angles)" << endl;
-            MPI_Recv(data_magnits, CELL_SIZE * CELL_SIZE, MPI_DOUBLE, 0, TAG_NEW_TASK_2, MPI_COMM_WORLD, &status);
+            MPI_Recv(data_magnits, cell_size * cell_size, MPI_DOUBLE, 0, TAG_NEW_TASK_2, MPI_COMM_WORLD, &status);
             if (debug) cout << "Worker[" << my_rank << "] has received a new task part 2/2(magnitudes)" << endl;
             double *histogram = HistogramOfOrientedGradients::getHistogram(data_magnits, data_angles);
             double magnitude = Operations::norm(histogram, NUM_BINS) + 0.01;
@@ -111,7 +114,7 @@ int main(int argc, char **argv) {
         }
         free(result_hog);
         cout << "HOG finished\n" << endl;
-        cout << "Elapsed time: " << counter.GetCounter() << " ns" << endl;
+        cout << "Elapsed time: " << counter.GetCounter() << " ms" << endl;
     } else {
         worker_job();
     }
