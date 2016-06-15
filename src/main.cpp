@@ -82,6 +82,12 @@ int main(int argc, char **argv) {
             cout << "usage: program image_path [-debug]" << endl;
             exit(-1);
         }
+    } else {
+        if (argc == 3) {
+            if (strcmp(argv[2], "-debug") == 0) {
+                debug = true;
+            }
+        }
     }
 
     QPCounter counter;
