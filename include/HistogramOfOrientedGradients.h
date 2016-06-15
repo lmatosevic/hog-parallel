@@ -6,7 +6,7 @@
 
 #define IMG_WIDTH 64
 #define IMG_HEIGHT 128
-#define NUM_BINS 8
+#define NUM_BINS 9
 #define CELL_SIZE 8
 #define NUM_HORIZ_CELLS 8
 #define NUM_VERT_CELLS 16
